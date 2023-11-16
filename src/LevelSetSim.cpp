@@ -113,11 +113,9 @@ void LevelSetSim2D::Advect(float dt)
 void LevelSetSim2D::Project(float dt)
 {
 	ComputeSDF();
-
 	ComputeWeights();
-
-	SolvePressure(dt);
-
+	SolvePressure();
+	ApplyPressureGradient(dt);
 }
 
 void LevelSetSim2D::ConstrainBoundary()
@@ -376,38 +374,127 @@ void LevelSetSim2D::ComputeWeights()
 	}
 }
 
-void LevelSetSim2D::SolvePressure(float dt)
+void LevelSetSim2D::SolvePressure()
 {
 	unsigned int size = ni_ * nj_;
+	unsigned int active_size = 5 * size - 2 * ni_ - 2 * nj_;
 	
 	if (rhs_.size() != size) {
 		rhs_.resize(size);
 		p_.resize(size);
 		A_.resize(size, size);
 		// exclude edge case
-		A_.reserve(5 * size - 2 * ni_ - 2 * nj_);
+		A_.reserve(active_size);
 	}
-
+	
+	std::vector<Eigen::Triplet<double>> TripletList;
+	TripletList.reserve(active_size * sizeof(Eigen::Triplet<double>));
 	rhs_.setZero();
 	p_.setZero();
 	A_.setZero();
 
-	float invh = 1 / h_;
-	float invh2 = invh * invh;
-	float coeff = dt *  invh2;
-
-	for (int j = 1; j < nj_ - 1; j++){
-		for (int i = 1; i < ni_ - 1; i++){
+	double invh = 1 / h_;
+	double invh2 = invh * invh;
+	for (int j = 0; j < nj_; j++){
+		for (int i = 0; i < ni_; i++){
 			int index = i + j * ni_;
 			float center_sdf = liquid_sdf_[index];
+			double center_value = 0.0;
 
 			if (center_sdf < 0.0f){
-
-				// right neighbor
+				double term = 0.0;
+				// right neighbor, excluding from edge case
+				if (i < ni_ - 1){
+					double right_value = 0.0;
+					term = u_weights_[index + 1] * invh2;
+					float right_sdf = liquid_sdf_[index + 1];
+					if (right_sdf < 0.0f){ // if right grid is also liquid
+						center_value += term;
+						right_value -= term;
+					}
+					else{
+						double theta = FractionInside(right_sdf, center_sdf);
+						theta = std::max(theta, 0.01);
+						center_value += term / theta;
+					}
+					if (right_value != 0.0)
+						TripletList.emplace_back(index, index + 1, right_value);
+					rhs_(index) -= u_weights_[index + 1] * u_[index + 1] * invh;
+				}
+				// left neighbor, excluding from edge cases
+				if (i > 0){
+					term = u_weights_[index - 1] * invh2;
+					float left_sdf = liquid_sdf_[index - 1];
+					double left_value = 0.0;
+					if (left_sdf < 0.0f){
+						center_value += term;
+						left_value -= term;
+					}else{
+						double theta = FractionInside(left_sdf, center_sdf);
+						theta = std::max(theta, 0.01);
+						center_value += term / theta;
+					}
+					if (left_value != 0.0)
+						TripletList.emplace_back(index, index - 1, left_value);
+					rhs_(index) += u_weights_[index - 1] * u_[index - 1] * invh;
+				}
+				// up neighbor, excluding from edge cases
+				if (j < nj_ - 1){
+					term = v_weights_[index + nj_] *invh2;
+					float up_sdf = liquid_sdf_[index + nj_];
+					double up_value = 0.0;
+					if (up_sdf < 0.0f){
+						center_value += term;
+						up_value -= term;
+					}else{
+						double theta = FractionInside(up_sdf, center_sdf);
+						theta = std::max(theta, 0.01);
+						center_value += term / theta;
+					}
+					if (up_value != 0.0)
+						TripletList.emplace_back(index, index + nj_, up_value);
+					rhs_(index) -= v_weights_[index + nj_] * v_[index + nj_] * invh;
+				}
+				// down neighbor, excluding from edge cases
+				if (j > 0){
+					term = v_weights_[index - nj_] * invh2;
+					float down_sdf = liquid_sdf_[index - nj_];
+					double down_value = 0.0;
+					if (down_sdf < 0.0f){
+						center_value += term;
+						down_value -= term;
+					}else{
+						double theta = FractionInside(down_sdf, center_sdf);
+						theta = std::max(theta, 0.01);
+						center_value += term / theta;
+					}
+					if (down_value != 0.0)
+						TripletList.emplace_back(index, index - nj_, down_value);
+					rhs_(index) += v_weights_[index - nj_] * v_[index - nj_] * invh;
+				}
+				TripletList.emplace_back(index, index, center_value);
+			}else{
+				// for non-liquid grid, just set diag to be one so the pressure here equals 0
+				TripletList.emplace_back(index, index, 1.0);
 			}
 		}
 	}
+	// construction down
+	A_.setFromTriplets(TripletList.begin(), TripletList.end());
 
+	Eigen::ConjugateGradient<Eigen::SparseMatrix<double>> cg_solver;
+	cg_solver.compute(A_);
+	if (cg_solver.info() != Eigen::Success){
+		printf("Decomposition Failed!");	
+	}
+	p_ = cg_solver.solve(rhs_);
+	if (cg_solver.info() != Eigen::Success){
+		printf("Solve Failed!");	
+	}
+}
+
+void LevelSetSim2D::ApplyPressureGradient(float dt)
+{
 }
 
 void LevelSetSim2D::ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,

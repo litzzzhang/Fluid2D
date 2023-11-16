@@ -14,7 +14,7 @@ public:
 	std::vector<float> u_, v_, u_temp_, v_temp_;
 	
 	// pressure sovler data using eigen data container
-	Eigen::VectorXd p_; // double for accuracy
+	Eigen::VectorXd p_; // p is not real pressure, it contains const dt/rho
 	Eigen::VectorXd rhs_;
 	Eigen::SparseMatrix<double> A_; // to-do figure out to use column major or row major or both
 
@@ -49,7 +49,8 @@ private:
 	// helper function for pressure projection
 	void ComputeSDF();
 	void ComputeWeights();
-	void SolvePressure(float dt);
+	void SolvePressure();
+	void ApplyPressureGradient(float dt);
 
 	void ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,
 		std::vector<char>& valid, int marker_ni, int marker_nj);
