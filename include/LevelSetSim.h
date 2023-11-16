@@ -1,6 +1,6 @@
 #pragma once
-#include "PPEMatrix.h"
 
+#include <Eigen/Sparse>
 #include <vector>
 #include <glm/glm.hpp>
 
@@ -12,9 +12,11 @@ public:
 
 	// simulation data
 	std::vector<float> u_, v_, u_temp_, v_temp_;
-	std::vector<double> p_; // double for accuracy
-	std::vector<double> rhs_;
-	PPEMatrix2D A_;
+	
+	// pressure sovler data using eigen data container
+	Eigen::VectorXd p_; // double for accuracy
+	Eigen::VectorXd rhs_;
+	Eigen::SparseMatrix<double> A_; // to-do figure out to use column major or row major or both
 
 	// geometry data
 	std::vector<float> boundary_sdf_, liquid_sdf_;
@@ -47,7 +49,7 @@ private:
 	// helper function for pressure projection
 	void ComputeSDF();
 	void ComputeWeights();
-	void SolvePressure();
+	void SolvePressure(float dt);
 
 	void ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,
 		std::vector<char>& valid, int marker_ni, int marker_nj);

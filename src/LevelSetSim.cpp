@@ -116,7 +116,7 @@ void LevelSetSim2D::Project(float dt)
 
 	ComputeWeights();
 
-	SolvePressure();
+	SolvePressure(dt);
 
 }
 
@@ -376,14 +376,36 @@ void LevelSetSim2D::ComputeWeights()
 	}
 }
 
-void LevelSetSim2D::SolvePressure()
+void LevelSetSim2D::SolvePressure(float dt)
 {
 	unsigned int size = ni_ * nj_;
 	
 	if (rhs_.size() != size) {
 		rhs_.resize(size);
 		p_.resize(size);
+		A_.resize(size, size);
+		// exclude edge case
+		A_.reserve(5 * size - 2 * ni_ - 2 * nj_);
+	}
 
+	rhs_.setZero();
+	p_.setZero();
+	A_.setZero();
+
+	float invh = 1 / h_;
+	float invh2 = invh * invh;
+	float coeff = dt *  invh2;
+
+	for (int j = 1; j < nj_ - 1; j++){
+		for (int i = 1; i < ni_ - 1; i++){
+			int index = i + j * ni_;
+			float center_sdf = liquid_sdf_[index];
+
+			if (center_sdf < 0.0f){
+
+				// right neighbor
+			}
+		}
 	}
 
 }
