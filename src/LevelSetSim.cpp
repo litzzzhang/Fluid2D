@@ -32,6 +32,11 @@ glm::vec2 LevelSetSim2D::GetVelocity(glm::vec2 pos) const
 	return glm::vec2(u_sample, v_sample);
 }
 
+float LevelSetSim2D::GetValue(glm::vec2 pos) const
+{
+    return 0.0f;
+}
+
 void LevelSetSim2D::Advance(float dt)
 {
 	float t = 0.0f;
@@ -87,6 +92,7 @@ void LevelSetSim2D::Advect(float dt)
 {
 	u_temp_.assign((ni_ + 1) * nj_, 0.0f);
 	v_temp_.assign(ni_ * (nj_ + 1), 0.0f);
+	std::vector<float> sdf_temp(ni_ * nj_);
 
 	for (int j = 0; j < nj_; j++) {
 		for (int i = 0; i < ni_ + 1; i++) {
@@ -104,10 +110,19 @@ void LevelSetSim2D::Advect(float dt)
 		}
 	}
 
+	for (int j = 0; j < nj_; j++){
+		for (int i = 0; i < ni_; i++){
+			glm::vec2 pos((i + 0.5f) * h_, (j + 0.5f) * h_); // Face centered grid for liquid sdf
+			pos = TraceRK2(pos, -dt);
+			sdf_temp[i+ ni_ * j] = GetValue(pos);	
+		}
+	}
+
 	// possible trial u_ = std::move(u_temp_);
 	// if the u_temp is really needed? can we just allocate resource in the advect step?
 	u_.swap(u_temp_);
 	v_.swap(v_temp_);
+	liquid_sdf_.swap(sdf_temp);
 }
 
 void LevelSetSim2D::Project(float dt)
@@ -115,7 +130,7 @@ void LevelSetSim2D::Project(float dt)
 	ComputeSDF();
 	ComputeWeights();
 	SolvePressure();
-	ApplyPressureGradient(dt);
+	ApplyPressureGradient();
 }
 
 void LevelSetSim2D::ConstrainBoundary()
@@ -493,8 +508,9 @@ void LevelSetSim2D::SolvePressure()
 	}
 }
 
-void LevelSetSim2D::ApplyPressureGradient(float dt)
+void LevelSetSim2D::ApplyPressureGradient()
 {
+	
 }
 
 void LevelSetSim2D::ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,

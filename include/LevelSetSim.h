@@ -30,6 +30,7 @@ public:
 
 	// simulation
 	glm::vec2 GetVelocity(glm::vec2 pos) const;
+	float GetValue(glm::vec2 pos) const;
 	void Advance(float dt);
 	// geometry
 	void SetBoundary(float sdf_function(const glm::vec2&));
@@ -50,7 +51,7 @@ private:
 	void ComputeSDF();
 	void ComputeWeights();
 	void SolvePressure();
-	void ApplyPressureGradient(float dt);
+	void ApplyPressureGradient();
 
 	void ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,
 		std::vector<char>& valid, int marker_ni, int marker_nj);
