@@ -1,0 +1,54 @@
+#pragma once
+#include "PPEMatrix.h"
+
+#include <vector>
+#include <glm/glm.hpp>
+
+class LevelSetSim2D {
+public:
+	float width_;
+	int ni_, nj_;
+	float h_;
+
+	// simulation data
+	std::vector<float> u_, v_, u_temp_, v_temp_;
+	std::vector<double> p_; // double for accuracy
+	std::vector<double> rhs_;
+	PPEMatrix2D A_;
+
+	// geometry data
+	std::vector<float> boundary_sdf_, liquid_sdf_;
+	// weights represents how much portion is not in the solid boundary
+	std::vector<float> u_weights_, v_weights_;
+	// valid marks grids which do have liquid in it, exclude pure air
+	std::vector<char> u_valid_, v_valid_;
+
+	LevelSetSim2D() = delete;
+	LevelSetSim2D(float width, int nx, int ny);
+
+	// simulation
+	glm::vec2 GetVelocity(glm::vec2 pos) const;
+	void Advance(float dt);
+	// geometry
+	void SetBoundary(float sdf_function(const glm::vec2&));
+	void SetLiquid(float sdf_function(const glm::vec2&));
+
+
+
+private:
+	void AddForce(float dt);
+	void Advect(float dt);
+	void Project(float dt);
+	void ConstrainBoundary();
+
+	float CFL() const;
+	glm::vec2 TraceRK2(const glm::vec2& pos, float dt) const;
+
+	// helper function for pressure projection
+	void ComputeSDF();
+	void ComputeWeights();
+	void SolvePressure();
+
+	void ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,
+		std::vector<char>& valid, int marker_ni, int marker_nj);
+};
