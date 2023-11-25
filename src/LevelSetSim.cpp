@@ -44,6 +44,7 @@ void LevelSetSim2D::Advance(float dt)
 
 	while (t < dt) {
 		float substep = CFL();
+		printf("cfl = %f", substep);
 		if (t + substep > dt) {
 			substep = dt - t;
 		}
