@@ -16,9 +16,9 @@ float liquid_sdf(const glm::vec2& pos) {
 }
 
 int main() {
-	LevelSetSim2D sim(1.0f, 100, 100);
+	LevelSetSim2D sim(1.0f, 50, 50);
 
-	// initialization boundary
+	// initialize boundary
 	sim.SetBoundary(boundary_sdf);
 	sim.SetLiquid(liquid_sdf);
 

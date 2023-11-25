@@ -202,7 +202,7 @@ float LevelSetSim2D::CFL() const
 	}
 
 	max_velocity += sqrt(5.0f * h_ * 9.8f); // in case of zero divide
-	return h_ / max_velocity;
+	return 5 * h_ / max_velocity;
 }
 
 glm::vec2 LevelSetSim2D::TraceRK2(const glm::vec2& pos, float dt) const
