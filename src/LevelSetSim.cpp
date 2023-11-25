@@ -245,18 +245,18 @@ void LevelSetSim2D::ComputeSDF()
 		}
 	}
 	// loop through the grid to propagate the distance with eikonal equation
-	// sort and solve eikonal equation with 1, 2, (3) respectively
+	// sort and solve eikonal equation with 1, 2, (3 in 3D) respectively
 
 	for (int iteration = 0; iteration < 2; iteration++) {//fast sweep
 		for (int j = 0; j < nj_; j++) {
 			for (int i = 0; i < ni_; i++) {
-				float center = liquid_sdf_[i + j * ni_];
-				// if grid not exist, initialize with infinite value(100.0f)
+				float center = temp_liquid_sdf[i + j * ni_];
+				// if grid not exist, initialize with upper bound value(100.0f)
 				// so that we will definitely select existing grid for Eikonal equation
-				float left = i == 0 ? 100.0f : liquid_sdf_[i - 1 + j * ni_];
-				float right = i == ni_ - 1 ? 100.0f : liquid_sdf_[i + 1 + j * ni_];
-				float down = j == 0 ? 100.0f : liquid_sdf_[i + (j - 1) * ni_];
-				float up = j == nj_ - 1 ? 100.0f : liquid_sdf_[i + (j + 1) * ni_];
+				float left = i == 0 ? 100.0f : temp_liquid_sdf[i - 1 + j * ni_];
+				float right = i == ni_ - 1 ? 100.0f : temp_liquid_sdf[i + 1 + j * ni_];
+				float down = j == 0 ? 100.0f : temp_liquid_sdf[i + (j - 1) * ni_];
+				float up = j == nj_ - 1 ? 100.0f : temp_liquid_sdf[i + (j + 1) * ni_];
 
 				float x_min = std::min(left, right);
 				float y_min = std::min(up, down);
@@ -269,7 +269,7 @@ void LevelSetSim2D::ComputeSDF()
 					if (dist > std::max(x_min, y_min)) {
 						dist = 0.5f * (x_min + y_min + std::sqrt(2 * h_ * h_ - std::pow(x_min- y_min, 2)));
 					}
-					if (dist < temp_liquid_sdf[i + j * ni_]) {
+					if (dist < abs(temp_liquid_sdf[i + j * ni_])) {
 						temp_liquid_sdf[i + j * ni_] = pow(-1, is_negative) * dist;
 					}
 				}
@@ -277,13 +277,13 @@ void LevelSetSim2D::ComputeSDF()
 			}
 
 			for (int i = ni_ - 1; i > 0; i--) {
-				float center = liquid_sdf_[i + j * ni_];
+				float center = temp_liquid_sdf[i + j * ni_];
 				// if grid not exist, initialize with infinite value(100.0f)
 				// so that we will definitely select existing grid for Eikonal equation
-				float left = i == 0 ? 100.0f : liquid_sdf_[i - 1 + j * ni_];
-				float right = i == ni_ - 1 ? 100.0f : liquid_sdf_[i + 1 + j * ni_];
-				float down = j == 0 ? 100.0f : liquid_sdf_[i + (j - 1) * ni_];
-				float up = j == nj_ - 1 ? 100.0f : liquid_sdf_[i + (j + 1) * ni_];
+				float left = i == 0 ? 100.0f : temp_liquid_sdf[i - 1 + j * ni_];
+				float right = i == ni_ - 1 ? 100.0f : temp_liquid_sdf[i + 1 + j * ni_];
+				float down = j == 0 ? 100.0f : temp_liquid_sdf[i + (j - 1) * ni_];
+				float up = j == nj_ - 1 ? 100.0f : temp_liquid_sdf[i + (j + 1) * ni_];
 
 
 				float x_min = std::min(left, right);
@@ -297,7 +297,7 @@ void LevelSetSim2D::ComputeSDF()
 					if (dist > std::max(x_min, y_min)) {
 						dist = 0.5f * (x_min + y_min + std::sqrt(2 * h_ * h_ - std::pow(x_min- y_min, 2)));
 					}
-					if (dist < temp_liquid_sdf[i + j * ni_]) {
+					if (dist < abs(temp_liquid_sdf[i + j * ni_])) {
 						temp_liquid_sdf[i + j * ni_] = pow(-1, is_negative) * dist;
 					}
 				}
@@ -306,13 +306,13 @@ void LevelSetSim2D::ComputeSDF()
 
 		for (int j = nj_ - 1; j > 0; j--) {
 			for (int i = 0; i < ni_; i++) {
-				float center = liquid_sdf_[i + j * ni_];
+				float center = temp_liquid_sdf[i + j * ni_];
 				// if grid not exist, initialize with infinite value(100.0f)
 				// so that we will definitely select existing grid for Eikonal equation
-				float left = i == 0 ? 100.0f : liquid_sdf_[i - 1 + j * ni_];
-				float right = i == ni_ - 1 ? 100.0f : liquid_sdf_[i + 1 + j * ni_];
-				float down = j == 0 ? 100.0f : liquid_sdf_[i + (j - 1) * ni_];
-				float up = j == nj_ - 1 ? 100.0f : liquid_sdf_[i + (j + 1) * ni_];
+				float left = i == 0 ? 100.0f : temp_liquid_sdf[i - 1 + j * ni_];
+				float right = i == ni_ - 1 ? 100.0f : temp_liquid_sdf[i + 1 + j * ni_];
+				float down = j == 0 ? 100.0f : temp_liquid_sdf[i + (j - 1) * ni_];
+				float up = j == nj_ - 1 ? 100.0f : temp_liquid_sdf[i + (j + 1) * ni_];
 
 				float x_min = std::min(left, right);
 				float y_min = std::min(up, down);
@@ -325,7 +325,7 @@ void LevelSetSim2D::ComputeSDF()
 					if (dist > std::max(x_min, y_min)) {
 						dist = 0.5f * (x_min + y_min + std::sqrt(2 * h_ * h_ - std::pow(x_min - y_min, 2)));
 					}
-					if (dist < temp_liquid_sdf[i + j * ni_]) {
+					if (dist < abs(temp_liquid_sdf[i + j * ni_])) {
 						temp_liquid_sdf[i + j * ni_] = pow(-1, is_negative) * dist;
 					}
 				}
@@ -333,13 +333,13 @@ void LevelSetSim2D::ComputeSDF()
 			}
 
 			for (int i = ni_ - 1; i > 0; i--) {
-				float center = liquid_sdf_[i + j * ni_];
+				float center = temp_liquid_sdf[i + j * ni_];
 				// if grid not exist, initialize with infinite value(100.0f)
 				// so that we will definitely select existing grid for Eikonal equation
-				float left = i == 0 ? 100.0f : liquid_sdf_[i - 1 + j * ni_];
-				float right = i == ni_ - 1 ? 100.0f : liquid_sdf_[i + 1 + j * ni_];
-				float down = j == 0 ? 100.0f : liquid_sdf_[i + (j - 1) * ni_];
-				float up = j == nj_ - 1 ? 100.0f : liquid_sdf_[i + (j + 1) * ni_];
+				float left = i == 0 ? 100.0f : temp_liquid_sdf[i - 1 + j * ni_];
+				float right = i == ni_ - 1 ? 100.0f : temp_liquid_sdf[i + 1 + j * ni_];
+				float down = j == 0 ? 100.0f : temp_liquid_sdf[i + (j - 1) * ni_];
+				float up = j == nj_ - 1 ? 100.0f : temp_liquid_sdf[i + (j + 1) * ni_];
 
 				float x_min = std::min(left, right);
 				float y_min = std::min(up, down);
@@ -352,7 +352,7 @@ void LevelSetSim2D::ComputeSDF()
 					if (dist > std::max(x_min, y_min)) {
 						dist = 0.5f * (x_min + y_min + std::sqrt(2 * h_ * h_ - std::pow(x_min - y_min, 2)));
 					}
-					if (dist < temp_liquid_sdf[i + j * ni_]) {
+					if (dist < abs(temp_liquid_sdf[i + j * ni_])) {
 						temp_liquid_sdf[i + j * ni_] = pow(-1, is_negative) * dist;
 					}
 				}
@@ -393,13 +393,11 @@ void LevelSetSim2D::SolvePressure()
 	unsigned int size = ni_ * nj_;
 	unsigned int active_size = 5 * size - 2 * ni_ - 2 * nj_;
 	
-	if (rhs_.size() != size) {
-		rhs_.resize(size);
-		p_.resize(size);
-		A_.resize(size, size);
-		// exclude edge case
-		A_.reserve(active_size);
-	}
+	rhs_.resize(size);
+	p_.resize(size);
+	A_.resize(size, size);
+	// only reserve active non-zero element
+	A_.reserve(active_size);
 	
 	std::vector<Eigen::Triplet<double>> TripletList;
 	TripletList.reserve(active_size * sizeof(Eigen::Triplet<double>));
@@ -430,6 +428,7 @@ void LevelSetSim2D::SolvePressure()
 						double theta = FractionInside(right_sdf, center_sdf);
 						theta = std::max(theta, 0.01);
 						center_value += term / theta;
+						//p_theta = 0, so we omit right value
 					}
 					if (right_value != 0.0)
 						TripletList.emplace_back(index, index + 1, right_value);
@@ -489,6 +488,7 @@ void LevelSetSim2D::SolvePressure()
 				TripletList.emplace_back(index, index, center_value);
 			}else{
 				// for non-liquid grid, just set diag to be one so the pressure here equals 0
+				// because we have initilize the rhs to be all zeros
 				TripletList.emplace_back(index, index, 1.0);
 			}
 		}
@@ -509,7 +509,7 @@ void LevelSetSim2D::SolvePressure()
 
 void LevelSetSim2D::ApplyPressureGradient()
 {
-	
+		
 }
 
 void LevelSetSim2D::ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,
