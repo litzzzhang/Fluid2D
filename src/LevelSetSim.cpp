@@ -13,8 +13,6 @@ LevelSetSim2D::LevelSetSim2D(float width, int ni, int nj)
 	v_temp_.resize((nj_ + 1) * ni_);
 	v_valid_.resize((nj_ + 1) * ni_);
 
-	p_.resize(ni_ * nj_);
-	
 	boundary_sdf_.resize((ni_ + 1) * (nj_ + 1));
 	liquid_sdf_.resize(ni_ * nj_);
 
@@ -34,7 +32,8 @@ glm::vec2 LevelSetSim2D::GetVelocity(glm::vec2 pos) const
 
 float LevelSetSim2D::GetValue(glm::vec2 pos) const
 {
-    return 0.0f;
+	// normalize the grid first
+    return InterpolateValueOnGrid(pos / h_, liquid_sdf_, ni_, nj_);
 }
 
 void LevelSetSim2D::Advance(float dt)
@@ -118,8 +117,6 @@ void LevelSetSim2D::Advect(float dt)
 		}
 	}
 
-	// possible trial u_ = std::move(u_temp_);
-	// if the u_temp is really needed? can we just allocate resource in the advect step?
 	u_.swap(u_temp_);
 	v_.swap(v_temp_);
 	liquid_sdf_.swap(sdf_temp);
@@ -213,6 +210,7 @@ glm::vec2 LevelSetSim2D::TraceRK2(const glm::vec2& pos, float dt) const
 
 void LevelSetSim2D::ComputeSDF()
 {
+	// set temp liquid_sdf to upper bound
 	std::vector<float> temp_liquid_sdf(ni_ * nj_, 100.0f);
 
 	// iterate current liquid sdf, find the boundary(sign change)
@@ -233,15 +231,16 @@ void LevelSetSim2D::ComputeSDF()
 			};
 
 			for (const float& neighbor : neighbors) {
-				if (neighbor * center < 0.0f) { 
+				if (neighbor * center <= 0.0f && center != neighbor) { 
 				// for neighbors who don't exist, let them be the same as center
 				// so that their ratio will not be calculate
-					if (calculate_ratio(neighbor) * h_ < dist) {
-						dist = calculate_ratio(neighbor);
+					float phi = calculate_ratio(neighbor) * h_;
+					if (abs(phi) < abs(dist)) {
+						dist = phi;
 					}
 				}
 			}
-			if (dist < 100.0f) // if we do update sdf
+			if (abs(dist) < 100.0f) // if we do update sdf
 				temp_liquid_sdf[i + j * nj_] = dist;
 		}
 	}
