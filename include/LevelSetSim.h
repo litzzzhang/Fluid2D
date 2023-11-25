@@ -54,5 +54,5 @@ private:
 	void ApplyPressureGradient();
 
 	void ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,
-		std::vector<char>& valid, int marker_ni, int marker_nj);
+		std::vector<char>& valid);
 };

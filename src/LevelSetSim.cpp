@@ -51,8 +51,8 @@ void LevelSetSim2D::Advance(float dt)
 		AddForce(substep);
 		Project(substep);
 
-		ExtrapolateToBoundary(u_, ni_ + 1, nj_, u_valid_, ni_ + 1, nj_);
-		ExtrapolateToBoundary(v_, ni_, nj_ + 1, v_valid_, ni_, nj_ + 1);
+		ExtrapolateToBoundary(u_, ni_ + 1, nj_, u_valid_);
+		ExtrapolateToBoundary(v_, ni_, nj_ + 1, v_valid_);
 
 		ConstrainBoundary();
 	}
@@ -540,17 +540,26 @@ void LevelSetSim2D::ApplyPressureGradient()
 			}
 		}
 	}
+	for (int i = 0; i < u_valid_.size(); i++){
+		if (u_valid_[i] == 0){
+			u_[i] = 0.0f;
+		}
+	}
+	for (int i = 0; i < v_valid_.size(); i++){
+		if (v_valid_[i] == 0){
+			v_[i] = 0.0f;
+		}
+	}
 }
 
 void LevelSetSim2D::ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,
-									std::vector<char>& valid, int marker_ni, int marker_nj)
+									std::vector<char>& valid)
 {
 	std::vector<float> temp_field = velocity_field;
-	std::vector<char> prev_valid(marker_ni * marker_nj);
+	std::vector<char> prev_valid = valid;
 
 	for (int layer = 0; layer < 10; layer++) { // to-do: let CFL decide the iteration
-		prev_valid = valid;
-
+		prev_valid.swap(valid);
 		// start from inner to get rid of access out of boundary
 		for (int j = 1; j < vel_nj - 1; j++) {
 			for (int i = 1; i < vel_ni - 1; i++) {
@@ -582,6 +591,6 @@ void LevelSetSim2D::ExtrapolateToBoundary(std::vector<float>& velocity_field, in
 				}
 			}
 		}
-		velocity_field = temp_field;
+		velocity_field.swap(temp_field);
 	}
 }
