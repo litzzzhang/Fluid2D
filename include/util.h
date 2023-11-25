@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <glm/glm.hpp>
+#include <vector>
 
 void GetBaryCentric(float x, int& i, float& f, int i_low_bound, int i_high_bound) {
 	// x is the coordinate after grid normalization
@@ -78,4 +79,5 @@ float FractionInside(float sdf_left, float sdf_right) {
 	if (sdf_left < 0.0f && sdf_right > 0.0f) {
 		return sdf_left / sdf_left - sdf_right;
 	}
+	return 0.0f;
 }
