@@ -509,7 +509,37 @@ void LevelSetSim2D::SolvePressure()
 
 void LevelSetSim2D::ApplyPressureGradient()
 {
-		
+	u_valid_.assign((ni_ + 1) * nj_, 0);
+	for (int j = 0; j < nj_; j++){
+		// only update velocity not on the boundary
+		for (int i = 1; i < ni_; i++){
+			int index = i + j * ni_;
+			float centersdf = liquid_sdf_[index];
+			float leftsdf = liquid_sdf_[index - 1];
+			if (u_weights_[index] > 0.0f && (centersdf < 0.0f || leftsdf < 0.0f)){
+				float theta = FractionInside(leftsdf, centersdf);
+				theta = std::max(theta, 0.01f);
+				u_[index] += (float)(p_[index] - p_[index - 1]) / theta / h_;
+				u_valid_[index] = 1;
+			}
+		}
+	}
+
+	v_valid_.assign(ni_ * (nj_ + 1), 0);
+	for (int j = 1; j < nj_; j++){
+		// only update velocity not on the boundary
+		for (int i = 0; i < ni_; i++){
+			int index = i + j * ni_;
+			float centersdf = liquid_sdf_[index];
+			float downsdf = liquid_sdf_[index - ni_];
+			if (v_weights_[index] > 0.0f && (centersdf < 0.0f || downsdf < 0.0f)){
+				float theta = FractionInside(centersdf, downsdf);
+				theta = std::max(theta, 0.01f);
+				v_[index] += (float)(centersdf - downsdf) / h_ / theta;
+				v_valid_[index] = 1;
+			}
+		}
+	}
 }
 
 void LevelSetSim2D::ExtrapolateToBoundary(std::vector<float>& velocity_field, int vel_ni, int vel_nj,

@@ -22,7 +22,7 @@ public:
 	std::vector<float> boundary_sdf_, liquid_sdf_;
 	// weights represents how much portion is not in the solid boundary
 	std::vector<float> u_weights_, v_weights_;
-	// valid marks grids which do have liquid in it, exclude pure air
+	// valid marks velocity which stands for liquid velocity, exclude pure air and solid boundary
 	std::vector<char> u_valid_, v_valid_;
 
 	LevelSetSim2D() = delete;
