@@ -1,16 +1,18 @@
 #include "LevelSetSim.h"
 
-const float r0 = 0.5f;
+const float r0 = 0.35f;
 const glm::vec2 center = glm::vec2(0.5f);
 const float timestep = 0.01f;
 
 float boundary_sdf(const glm::vec2& pos) {
-	float dist = glm::length(center - pos);
-	return -(dist - r0);
+	float xdist = std::min(pos.x, 1 - pos.x);
+	float ydist = std::min(pos.y, 1 - pos.y);
+	return std::min(xdist, ydist);
 }
 
 float liquid_sdf(const glm::vec2& pos) {
-	return 0.0f;
+	float dist = glm::length(center - pos);
+	return dist - r0;
 }
 
 int main() {

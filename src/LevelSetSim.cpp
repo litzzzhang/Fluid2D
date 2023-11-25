@@ -371,6 +371,8 @@ void LevelSetSim2D::ComputeWeights()
 		for (int i = 0; i < ni_ + 1; i++) {
 			// index will not exceed because boundary sdf is defined on the grid nodal 
 			// u_weights is defined on the face center
+			if (i + j * ni_ > (ni_+ 1) *nj_)
+				printf("overflow, try to write index %d", i+ j*ni_);
 			weight = 1 - FractionInside(boundary_sdf_[i + j * ni_],
 												boundary_sdf_[i + (j + 1) * ni_]);
 			u_weights_[i + j * ni_] = glm::clamp(weight, 0.0f, 1.0f);
@@ -381,6 +383,8 @@ void LevelSetSim2D::ComputeWeights()
 		for (int i = 0; i < ni_; i++) {
 			// index will not exceed because boundary sdf is defined on the grid nodal 
 			// u_weights is defined on the face center
+			if (i + j * ni_ > (nj_+ 1) *ni_)
+				printf("overflow, try to write index %d", i+ j*ni_);
 			weight = 1 - FractionInside(boundary_sdf_[i + j * ni_],
 												boundary_sdf_[i + 1 + j * ni_]);
 			v_weights_[i + j * ni_] = glm::clamp(weight, 0.0f, 1.0f);
