@@ -13,7 +13,7 @@ public:
 	// simulation data
 	std::vector<float> u_, v_, u_temp_, v_temp_;
 	
-	// pressure sovler data using eigen data container
+	// pressure solver data using eigen data container
 	Eigen::VectorXd p_; // p is not real pressure, it contains const dt/rho
 	Eigen::VectorXd rhs_;
 	Eigen::SparseMatrix<double> A_; // to-do figure out to use column major or row major or both

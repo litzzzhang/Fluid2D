@@ -9,9 +9,11 @@ LevelSetSim2D::LevelSetSim2D(float width, int ni, int nj)
 	u_.resize((ni_ + 1) * nj_);
 	u_temp_.resize((ni_ + 1) * nj_);
 	u_valid_.resize((ni_ + 1) * nj_);
+	u_weights_.resize((ni_ + 1) * nj_);
 	v_.resize((nj_ + 1) * ni_);
 	v_temp_.resize((nj_ + 1) * ni_);
 	v_valid_.resize((nj_ + 1) * ni_);
+	v_weights_.resize((nj_ + 1) * ni_);
 
 	boundary_sdf_.resize((ni_ + 1) * (nj_ + 1));
 	liquid_sdf_.resize(ni_ * nj_);
@@ -47,14 +49,19 @@ void LevelSetSim2D::Advance(float dt)
 		}
 		printf("Taking substep of size %f (to %0.3f%% of the frame)\n", substep, 100 * (t + substep) / dt);
 
+		printf("---Advect---\n");
 		Advect(substep);
+		printf("---AddForce---\n");
 		AddForce(substep);
+		printf("---Project---\n");
 		Project(substep);
-
+		printf("---Extrapolate---\n");
 		ExtrapolateToBoundary(u_, ni_ + 1, nj_, u_valid_);
 		ExtrapolateToBoundary(v_, ni_, nj_ + 1, v_valid_);
 
+		printf("---Constrain Boundary---\n");
 		ConstrainBoundary();
+		t += substep;
 	}
 }
 
